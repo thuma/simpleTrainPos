@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="ol/ol.css" type="text/css">
     <style>
       .map {
@@ -389,7 +390,12 @@ swedish_params("sweref_99_tm");
             "trainids":trainids
             };
     }
-
+      var jvgLineStyle = new ol.style.Style({
+		stroke: new ol.style.Stroke({
+			color: 'blue',
+			width: 5
+			})
+		});
       var url="tiles/{z}/{x}/{y}.png";
       var follow = '';
       var position = {};
@@ -427,10 +433,9 @@ var style = new ol.style.Style({
     })
 });
 
-      var Socket = new WebSocket('wss://api.oxyfi.com/trainpos/listen?v=1&key=e6ab725a30ef45f6a38c3a9b83f5f65a');
-Socket.onmessage = function (data){
+    var Socket = new WebSocket('wss://api.oxyfi.com/trainpos/listen?v=1&key=e6ab725a30ef45f6a38c3a9b83f5f65a');
+	Socket.onmessage = function (data){
     data = readgprmc(data.data);
-
     if (data["speed"] > 5.0 || list[data['vehicle']] == undefined){
     var point = new ol.Feature({
         geometry: new ol.geom.Point(ol.proj.transform(data["position"], 'EPSG:4326', 'EPSG:3857')),
@@ -465,17 +470,36 @@ Socket.onmessage = function (data){
 
 function setMapCenter(train){
         follow = train;
-        getPosition(list[train]['pos']);
         map.getView().setCenter(ol.proj.transform(list[train]['pos'], 'EPSG:4326', 'EPSG:3857'));
     }
 
 function getLimit(pos){
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://192.168.60.11:9264/'+pos[0]+'/'+pos[1]);
+	var query = {"geometry": {"$near": {"$geometry": {"type":"Point", "coordinates": pos}, "$maxDistance": 100}}};
+	var fields = {"properties.STH_ABS": 1,"geometry.coordinates":1,"properties.Bandelnamn":1};
+    xhr.open('GET', 'https://www.yathra.se/api/map/jvg?where='+JSON.stringify(query)+"&projection="+JSON.stringify(fields));
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-       document.getElementById('trainmax').innerHTML = '';
-       JSON.parse(this.responseText).speeds.forEach(showmaxspeeds);
+	    var rdata = JSON.parse(this.responseText)
+		var coords = rdata._items[0].geometry.coordinates;
+		var lineString = new ol.geom.LineString(coords);
+		lineString.transform('EPSG:4326', 'EPSG:3857');
+		// create the feature
+		if(!window.addedfeature){
+			window.lineFeature = new ol.Feature({
+			  geometry: lineString,
+			  name: 'Line',
+			  style: [jvgLineStyle]
+			});
+			poslayer.addFeature(window.lineFeature);
+			window.addedfeature = 1;
+		}
+		window.lineFeature.setGeometry(lineString);
+		window.lineFeature.setStyle(jvgLineStyle);
+		
+        document.getElementById('trainmax').innerHTML = '';
+		append('trainmax',"Sträcka: " + rdata._items[0].properties.Bandelnamn + "<br>Max (km/h):<br>");
+		rdata._items[0].properties.STH_ABS.split('/').forEach(showmaxspeeds);
     }
     };
     xhr.send();
@@ -498,6 +522,20 @@ function getPosition(pos){
     };
     xhr.setRequestHeader('Content-Type', 'text/xml');
     xhr.send('<REQUEST><LOGIN authenticationkey="bd08e0c825154775a9c860ee8e08ed05" /><QUERY objecttype="TrainStation"><FILTER><WITHIN name="Geometry.SWEREF99TM" shape="center" value="'+pos+'" radius="1000" /></FILTER></QUERY></REQUEST>');
+    }
+
+	
+//Ke-Tmö
+function getLocationForTrain(tid){
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://api.trafikinfo.trafikverket.se/v1.3/data.json');
+    xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+       console.log(JSON.parse(this.responseText));
+    }
+    };
+    xhr.setRequestHeader('Content-Type', 'text/xml');
+    xhr.send('<REQUEST><LOGIN authenticationkey="bd08e0c825154775a9c860ee8e08ed05" /><QUERY objecttype="TrainAnnouncement" orderby="AdvertisedTimeAtLocation"><FILTER><EQ name="TechnicalTrainIdent" value="7077" /></FILTER></QUERY></REQUEST>');
     }
     
 function getDepartures(stop){
