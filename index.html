@@ -433,7 +433,7 @@ var style = new ol.style.Style({
     })
 });
 
-    var Socket = new WebSocket('wss://api.oxyfi.com/trainpos/listen?v=1&key=e6ab725a30ef45f6a38c3a9b83f5f65a');
+    var Socket = new WebSocket('wss://map.thure.org/oxyfigps/');
 	Socket.onmessage = function (data){
     data = readgprmc(data.data);
     if (data["speed"] > 5.0 || list[data['vehicle']] == undefined){
