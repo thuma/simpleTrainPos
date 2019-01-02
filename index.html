@@ -19,19 +19,20 @@
     <div id="mapapp">
         <div v-if="slectedtrain !== ''">
           <div>Tåg id: {{ slectedtrain }}</div>
-          <div>På sträckan: {{ trainlist[slectedtrain].bandel }}</div>
+          <div>På sträckan: {{ trainlist[slectedtrain].bandel }} bandel {{ trainlist[slectedtrain].PlatsForb }}</div>
           <div>Hastighet: {{ trainlist[slectedtrain].speed }} km/h av max: {{ trainlist[slectedtrain].maxspeed }}</div>
-          <div>Tågnummer: {{ trainlist[slectedtrain].trainid }} </div>
+          <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://1409.se/position?tagNr='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
         </div>
         <table style="float:right;">
-            <tr v-for="(train, trainid) in trainlist" v-on:click="slectedtrain = trainid">
+            <tr v-for="trainid in sortedlist" v-on:click="slectedtrain = trainid" v-bind:style="{color:selected(trainid)}">
                 <td>{{ trainid }}</td>
-                <td>{{ train.speed }} km/h</td>
-                <td>{{ train.trainid }}</td>
+                <td>{{ trainlist[trainid].speed }} km/h</td>
+                <td>{{ trainlist[trainid].trainid }}</td>
             </tr>
         </table>
     </div>
     <div id="map" class="map"></div>
+    <iframe src="about:blank" name="iframename" style="width: 500px;height: 800px;"></iframe>
     <script>
 
     function readgprmc(cvsline){
@@ -153,6 +154,7 @@ function getLimit(pos, trainid){
         }
         mapapp.trainlist[localtrainid].bandel = rdata._items[0].properties.Bandelnamn;
         mapapp.trainlist[localtrainid].maxspeed = rdata._items[0].properties.STH_ABS;
+        mapapp.trainlist[localtrainid].PlatsForb = rdata._items[0].properties.PlatsForb;
     }
     };
     xhr.send();
@@ -218,7 +220,18 @@ var mapapp = new Vue({
     this.socket = new WebSocket('wss://map.thure.org/oxyfigps/');
     this.socket.onmessage = this.newPosData;
   },
+  computed: {
+    sortedlist: function(){
+      return Object.keys(this.trainlist).sort();
+    }
+  },
   methods: {
+    selected: function (trainid){
+        if (trainid == this.slectedtrain){
+          return "red";
+        }
+        return "#000000";
+    },
     newPosData: function (data){
     data = readgprmc(data.data);
 
@@ -248,6 +261,7 @@ var mapapp = new Vue({
         this.$set(this.trainlist[data['vehicle']], "trainid", data["trainids"])
         this.$set(this.trainlist[data['vehicle']], "bandel","")
         this.$set(this.trainlist[data['vehicle']], "maxspeed","")
+        this.$set(this.trainlist[data['vehicle']], "PlatsForb","")
     }
     this.trainlist[data['vehicle']]["pos"] = data["position"];
     this.trainlist[data['vehicle']]["speed"] = speed;
