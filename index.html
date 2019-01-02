@@ -169,7 +169,7 @@ function getPosition(pos){
     pos = geodetic_to_grid(pos[1], pos[0]);
     pos = pos[1]+" "+ pos[0];
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://api.trafikinfo.trafikverket.se/v1.1/data.json');
+    xhr.open('POST', 'https://api.trafikinfo.trafikverket.se/v1.1/data.json');
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
        stopid = JSON.parse(this.responseText).RESPONSE.RESULT[0].TrainStation[0].LocationSignature;
@@ -182,7 +182,7 @@ function getPosition(pos){
 
 function getLocationForTrain(tid){
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://api.trafikinfo.trafikverket.se/v1.3/data.json');
+    xhr.open('POST', 'https://api.trafikinfo.trafikverket.se/v1.3/data.json');
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
        console.log(JSON.parse(this.responseText));
@@ -197,7 +197,7 @@ function getDepartures(stopa, stopb, trainid){
         stopb = stopa;
     }
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://api.trafikinfo.trafikverket.se/v1.3/data.json');
+    xhr.open('POST', 'https://api.trafikinfo.trafikverket.se/v1.3/data.json');
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
        trains = JSON.parse(this.responseText).RESPONSE.RESULT[0].TrainAnnouncement;
