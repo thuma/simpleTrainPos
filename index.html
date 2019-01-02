@@ -103,6 +103,11 @@
           maxZoom: 17
         })
       });
+map.on('singleclick', function(evt) {
+    var feature = map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+        mapapp.slectedtrain = feature.U.name;
+        });
+});
       
 var style = new ol.style.Style({
     image: new ol.style.Circle({
@@ -241,6 +246,7 @@ var mapapp = new Vue({
     });
     
     point.setStyle(style);
+    
     
     if(position[data['vehicle']] == undefined){
         position[data['vehicle']] = point;
