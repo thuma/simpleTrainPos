@@ -27,7 +27,7 @@
             <tr v-for="trainid in sortedlist" v-on:click="slectedtrain = trainid" v-bind:style="{color:selected(trainid)}">
                 <td>{{ trainid }}</td>
                 <td>{{ trainlist[trainid].speed }} km/h</td>
-                <td>{{ trainlist[trainid].trainid }}</td>
+                <td><span v-for="id in trainlist[trainid].trainid">{{ id }}<br></span></td>
             </tr>
         </table>
     </div>
@@ -204,9 +204,16 @@ function getDepartures(stopa, stopb, trainid){
        tids = "";
        match = {};
        for(var i = 0; i < trains.length; i++){
-         tids += trains[i].AdvertisedTrainIdent + " " + trains[i].InformationOwner + "<br>";
-         if (mapapp.trainlist[trainid].trainid.indexOf(trains[i].AdvertisedTrainIdent) == -1){
-            mapapp.trainlist[trainid].trainid.push(trains[i].AdvertisedTrainIdent);
+         if(match[trains[i].AdvertisedTrainIdent] == undefined){
+         match[trains[i].AdvertisedTrainIdent] = 1;
+         } else {
+         match[trains[i].AdvertisedTrainIdent] += 1;
+         }
+       }
+       console.log(match);
+       for(var i = 0; i < trains.length; i++){
+         if (mapapp.trainlist[trainid].trainid.indexOf(trains[i].AdvertisedTrainIdent+".public.trains.se@"+new Date().toISOString().substring(0,10)) == -1 && match[trains[i].AdvertisedTrainIdent] == 1){
+            mapapp.trainlist[trainid].trainid.push(trains[i].AdvertisedTrainIdent+".public.trains.se@"+new Date().toISOString().substring(0,10));
          }
        }
     }
