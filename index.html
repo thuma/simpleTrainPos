@@ -30,7 +30,7 @@
           <iframe src="about:blank" name="iframename" style="width: 100%; height: 100%; border:0px"></iframe>
         </div>
         <div class="col-md-6">
-          <table class="table">
+          <table class="table table-striped table-sm">
             <tr>
               <th>
                 Fordon
@@ -42,7 +42,7 @@
                 Tågnummer
               </th>
             </tr>
-            <tr v-for="trainid in sortedlist" v-bind:style="{color:selected(trainid)}">
+            <tr v-for="trainid in sortedlist" v-bind:class="{'table-primary':selected(trainid)}">
                 <td><button v-on:click="slectedtrain = trainid" class="btn btn-light">{{ traintypes[trainid.split('.')[0]] }} {{ trainid.split('.')[0] }}</button></td>
                 <td>{{ trainlist[trainid].speed }} / {{ speeds[traintypes[trainid.split('.')[0]]] }} km/h</td>
                 <td><span v-for="id in trainlist[trainid].trainid">{{ id.split('.')[0] }} </span></td>
@@ -288,9 +288,9 @@ var mapapp = new Vue({
   methods: {
     selected: function (trainid){
         if (trainid == this.slectedtrain){
-          return "red";
+          return true;
         }
-        return "#000000";
+        return false;
     },
     newPosData: function (data){
     data = readgprmc(data.data);
