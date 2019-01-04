@@ -20,11 +20,15 @@
       </div>
       <div class="row" id="mapapp">
         <div class="col-md-6">
-          <div v-if="slectedtrain !== ''">
-            <div>Tåg id: {{ slectedtrain }}</div>
-            <div>På sträckan: {{ trainlist[slectedtrain].bandel }} bandel {{ trainlist[slectedtrain].PlatsForb }}</div>
-            <div>Hastighet: {{ trainlist[slectedtrain].speed }} /  km/h av max: {{ trainlist[slectedtrain].maxspeed }}</div>
-            <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://1409.se/position?tagNr='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
+          <div v-if="slectedtrain !== ''" class="card">
+            <div class="card-body">
+              <h2>{{ traintypes[slectedtrain.split('.')[0]] }} {{ slectedtrain.split('.')[0] }}</h2>
+              <div>På sträckan: {{ trainlist[slectedtrain].bandel }}</div>
+              <div>Plats: {{ trainlist[slectedtrain].PlatsForb }}</div>
+              <div>Hastighet: {{ trainlist[slectedtrain].speed }} km/h</div>
+              <div>Bana STH: {{ trainlist[slectedtrain].maxspeed }}</div>
+              <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://1409.se/position?tagNr='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
+            </div>
           </div>
           <div id="map" class="map"></div>
           <iframe src="about:blank" name="iframename" style="width: 100%; height: 100%; border:0px"></iframe>
@@ -43,7 +47,7 @@
               </th>
             </tr>
             <tr v-for="trainid in sortedlist" v-bind:class="{'table-primary':selected(trainid)}">
-                <td><button v-on:click="slectedtrain = trainid" class="btn btn-light">{{ traintypes[trainid.split('.')[0]] }} {{ trainid.split('.')[0] }}</button></td>
+                <td><button v-on:click="if(slectedtrain == trainid){slectedtrain = ''} else {slectedtrain = trainid}" class="btn btn-sm" v-bind:class="{'btn-primary':selected(trainid),'btn-info':!selected(trainid)}">{{ traintypes[trainid.split('.')[0]] }} {{ trainid.split('.')[0] }}</button></td>
                 <td>{{ trainlist[trainid].speed }} / {{ speeds[traintypes[trainid.split('.')[0]]] }} km/h</td>
                 <td><span v-for="id in trainlist[trainid].trainid">{{ id.split('.')[0] }} </span></td>
             </tr>
