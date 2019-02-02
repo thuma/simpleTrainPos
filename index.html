@@ -47,7 +47,7 @@
               </th>
             </tr>
             <tr v-for="trainid in sortedlist" v-bind:class="{'table-primary':selected(trainid)}">
-                <td><button v-on:click="if(slectedtrain == trainid){slectedtrain = ''} else {slectedtrain = trainid}" class="btn btn-sm" v-bind:class="{'btn-primary':selected(trainid),'btn-info':!selected(trainid)}">{{ traintypes[trainid.split('.')[0]] }} {{ trainid.split('.')[0] }}</button></td>
+                <td><button v-on:click="selectTrain(trainid)" class="btn btn-sm" v-bind:class="{'btn-primary':selected(trainid),'btn-info':!selected(trainid)}">{{ traintypes[trainid.split('.')[0]] }} {{ trainid.split('.')[0] }}</button></td>
                 <td>{{ trainlist[trainid].speed }} / {{ speeds[traintypes[trainid.split('.')[0]]] }} km/h</td>
                 <td><span v-for="id in trainlist[trainid].trainid">{{ id.split('.')[0] }} </span></td>
             </tr>
@@ -119,6 +119,48 @@ function setMapCenter(train){
         mapapp.slectedtrain = train;
         map.getView().setCenter(ol.proj.transform(mapapp.trainlist[train]['pos'], 'EPSG:4326', 'EPSG:3857'));
     }
+
+function getPostitionAtTime(trainid,){
+
+https://www.yathra.se/api/map/postdata?where={%22id%22:%2262008.trains.se%22,%22speed%22:{%22$gt%22:10.0}}
+    var xhr = new XMLHttpRequest();
+    var query = {"id": trainid, "time":{"$lte":""}};
+    xhr.open('GET', 'https://www.yathra.se/api/map/postdata?max_results=1&sort=-1&where='+JSON.stringify(query));
+    //var fields = {"properties.PlatsForb":1, "properties.STH_ABS": 1,"geometry.coordinates":1,"properties.Bandelnamn":1};
+    //+"&projection="+JSON.stringify(fields));
+    var localtrainid = trainid;
+    xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+        var rdata = JSON.parse(this.responseText)
+        var coords = rdata._items[0].geometry.coordinates;
+        var lineString = new ol.geom.LineString(coords);
+        lineString.transform('EPSG:4326', 'EPSG:3857');
+        // create the feature
+        if(!window.addedfeature){
+            window.lineFeature = new ol.Feature({
+              geometry: lineString,
+              name: 'Line',
+              style: [jvgLineStyle]
+            });
+            poslayer.addFeature(window.lineFeature);
+            window.addedfeature = 1;
+        }
+        window.lineFeature.setGeometry(lineString);
+        window.lineFeature.setStyle(jvgLineStyle);
+        stops = rdata._items[0].properties.PlatsForb.split('-');
+        if(stops.length > 1){
+            getDepartures(stops[0],stops[1], trainid);
+        } else {
+            getDepartures(stops[0],undefined, trainid);
+        }
+        mapapp.trainlist[localtrainid].bandel = rdata._items[0].properties.Bandelnamn;
+        mapapp.trainlist[localtrainid].maxspeed = rdata._items[0].properties.STH_ABS;
+        mapapp.trainlist[localtrainid].PlatsForb = rdata._items[0].properties.PlatsForb;
+    }
+    };
+    xhr.send();
+
+}
 
 function getLimit(pos, trainid){
     var xhr = new XMLHttpRequest();
@@ -230,6 +272,8 @@ var mapapp = new Vue({
         "3112":"X11",
         "3167":"X11",
         "3189":"X11",
+        "3223":"X14",
+        "3234":"X14",
         "62001":"X62",
         "62002":"X62",
         "62003":"X62",
@@ -238,6 +282,7 @@ var mapapp = new Vue({
         "62006":"X62",
         "62007":"X62",
         "62008":"X62",
+        "62009":"X62",
         "62010":"X62",
         "62011":"X62",
         "62012":"X62",
@@ -282,6 +327,7 @@ var mapapp = new Vue({
       "X53": 180,
       "X54": 200,
       "X11": 140,
+      "X14": 160,
       "Y31": 140,
       "X62": 180,
     }
@@ -293,9 +339,19 @@ var mapapp = new Vue({
   computed: {
     sortedlist: function(){
       return Object.keys(this.trainlist).sort();
+    },
+    asyncData: function(){
+      return "Loading"
     }
   },
   methods: {
+    selectTrain: function(trainid){
+      if(this.slectedtrain == trainid){
+        this.slectedtrain = ''
+      } else {
+        this.slectedtrain = trainid
+      }
+    },
     selected: function (trainid){
         if (trainid == this.slectedtrain){
           return true;
