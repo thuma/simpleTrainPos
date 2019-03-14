@@ -135,83 +135,64 @@ function setMapCenter(train){
         map.getView().setCenter(ol.proj.transform(mapapp.trainlist[train]['pos'], 'EPSG:4326', 'EPSG:3857'));
     }
 
-function getPostitionAtTime(trainid,){
+function getPostitionAtTime(trainid, time){
     var xhr = new XMLHttpRequest();
-    var query = {"id": trainid, "time":{"$lte":""}};
+    var query = {"id": trainid, "time":{"$lte":time}};
     xhr.open('GET', 'https://www.yathra.se/api/map/postdata?max_results=1&sort=-1&where='+JSON.stringify(query));
     var localtrainid = trainid;
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
         var rdata = JSON.parse(this.responseText)
-        var coords = rdata._items[0].geometry.coordinates;
-        var lineString = new ol.geom.LineString(coords);
-        lineString.transform('EPSG:4326', 'EPSG:3857');
-        // create the feature
-        if(!window.addedfeature){
-            window.lineFeature = new ol.Feature({
-              geometry: lineString,
-              name: 'Line',
-              style: [jvgLineStyle]
-            });
-            poslayer.addFeature(window.lineFeature);
-            window.addedfeature = 1;
-        }
-        window.lineFeature.setGeometry(lineString);
-        window.lineFeature.setStyle(jvgLineStyle);
-        stops = rdata._items[0].properties.PlatsForb.split('-');
-        if(stops.length > 1){
-            getDepartures(stops[0],stops[1], trainid);
-        } else {
-            getDepartures(stops[0],undefined, trainid);
-        }
-        mapapp.trainlist[localtrainid].bandel = rdata._items[0].properties.Bandelnamn;
-        mapapp.trainlist[localtrainid].maxspeed = rdata._items[0].properties.STH_ABS;
-        mapapp.trainlist[localtrainid].PlatsForb = rdata._items[0].properties.PlatsForb;
-        mapapp.trainlist[localtrainid].track = coords;
+        console.log(rdata);
     }
     };
     xhr.send();
-
 }
 
-function getLimit(pos, trainid){
+
+function getBandel(train){
     var xhr = new XMLHttpRequest();
-    var query = {"geometry": {"$near": {"$geometry": {"type":"Point", "coordinates": pos}, "$maxDistance": 100}}};
-    var fields = {"properties.PlatsForb":1, "properties.STH_ABS": 1,"geometry.coordinates":1,"properties.Bandelnamn":1};
+    var newpos = futurePosition(train["position"], train["speed"], train["direction"], train["date"]+"T"+train["time"]);
+    var query = {"geometry": {"$near": {"$geometry": {"type":"Point", "coordinates": newpos}, "$maxDistance": 100}}};
+    var fields = {"properties.PlatsForb":1, "properties.STH_ABS": 1,"properties.Bandelnamn":1};
     xhr.open('GET', 'https://www.yathra.se/api/map/jvg?where='+JSON.stringify(query)+"&projection="+JSON.stringify(fields));
-    var localtrainid = trainid;
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
         var rdata = JSON.parse(this.responseText)
-        var coords = rdata._items[0].geometry.coordinates;
-        var lineString = new ol.geom.LineString(coords);
-        lineString.transform('EPSG:4326', 'EPSG:3857');
-        // create the feature
-        if(!window.addedfeature){
-            window.lineFeature = new ol.Feature({
-              geometry: lineString,
-              name: 'Line',
-              style: [jvgLineStyle]
-            });
-            poslayer.addFeature(window.lineFeature);
-            window.addedfeature = 1;
-        }
-        window.lineFeature.setGeometry(lineString);
-        window.lineFeature.setStyle(jvgLineStyle);
+        mapapp.trainlist[train['vehicle']].PlatsForb = rdata._items[0].properties.PlatsForb;
+        mapapp.trainlist[train['vehicle']].bandel = rdata._items[0].properties.Bandelnamn;
+        mapapp.trainlist[train['vehicle']].maxspeed = rdata._items[0].properties.STH_ABS;
         stops = rdata._items[0].properties.PlatsForb.split('-');
         if(stops.length > 1){
-            getDepartures(stops[0],stops[1], trainid);
+            getDepartures(stops[0],stops[1], train['vehicle']);
         } else {
-            getDepartures(stops[0],undefined, trainid);
+            getDepartures(stops[0],undefined, train['vehicle']);
         }
-        mapapp.trainlist[localtrainid].bandel = rdata._items[0].properties.Bandelnamn;
-        mapapp.trainlist[localtrainid].maxspeed = rdata._items[0].properties.STH_ABS;
-        mapapp.trainlist[localtrainid].PlatsForb = rdata._items[0].properties.PlatsForb;
-        mapapp.trainlist[localtrainid].track = coords;
-        mapapp.trainlist[localtrainid].trackloading = false;
+        getBandelData(mapapp.trainlist[train['vehicle']].PlatsForb)
     }
     };
     xhr.send();
+}
+
+function getBandelData(bandel){
+    var xhr = new XMLHttpRequest();
+    var query = {"properties.PlatsForb":bandel};
+    var fields = {"properties.PlatsForb":1, "properties.STH_ABS": 1,"geometry.coordinates":1, "properties.Bandelnamn":1};
+    xhr.open('GET', 'https://www.yathra.se/api/map/jvg?where='+JSON.stringify(query)+"&projection="+JSON.stringify(fields));
+    ibandel = bandel
+    xhr.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+        var rdata = JSON.parse(this.responseText)
+        var coords = []
+        for(var i = 1; i < rdata._items.length; i++ ){
+          coords = coords.concat(rdata._items[i].geometry.coordinates);
+        }
+        mapapp.track[ibandel] = coords;
+    }
+    };
+    if(!mapapp.track[bandel]){
+       xhr.send();
+    }
 }
 
 function getPosition(pos){
@@ -240,7 +221,7 @@ function getLocationForTrain(tid){
     xhr.setRequestHeader('Content-Type', 'text/xml');
     xhr.send('<REQUEST><LOGIN authenticationkey="bd08e0c825154775a9c860ee8e08ed05" /><QUERY objecttype="TrainAnnouncement" orderby="AdvertisedTimeAtLocation"><FILTER><EQ name="TechnicalTrainIdent" value="7077" /></FILTER></QUERY></REQUEST>');
     }
-    
+
 function getDepartures(stopa, stopb, trainid){
     if (stopb == undefined){
         stopb = stopa;
@@ -275,6 +256,7 @@ var mapapp = new Vue({
   data: {
     trainlist: {},
     slectedtrain: "",
+    track:{},
     dirdiff: {
       "62003.trains.se": -9,
       "62008.trains.se": 6,
@@ -291,8 +273,11 @@ var mapapp = new Vue({
         "3112":"X11",
         "3167":"X11",
         "3189":"X11",
+        "3190":"X11",
         "3223":"X14",
+        "3231":"X14",
         "3234":"X14",
+        "3235":"X14",
         "62001":"X62",
         "62002":"X62",
         "62003":"X62",
@@ -331,6 +316,7 @@ var mapapp = new Vue({
         "9050":"X53",
         "9056":"X54",
         "9057":"X54",
+        "9062":"x52",
         "9067":"X52",
         "9068":"X54",
         "9081":"X52E-3",
@@ -365,25 +351,36 @@ var mapapp = new Vue({
     }
   },
   methods: {
+    directionUpdate: function(p1,p2){
+      var point1 = turf.point(p1);
+      var point2 = turf.point(p2);
+      return turf.bearingToAzimuth(turf.bearing(point1, point2));
+    },
     updatePos: function(){
           appdata = this;
           Object.keys(position).forEach(function(pos){
             data = appdata.trainlist[pos];
-            if(mapapp.slectedtrain == pos && appdata.trainlist[pos].track.length == 0){
-                appdata.trainlist[pos].track = [data["pos"], data["pos"]];
-                getLimit(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]), pos);
-            }
-            if (appdata.slectedtrain == pos && appdata.trainlist[pos].track.length > 0){
-              var line = turf.lineString(appdata.trainlist[pos].track);
+            if (appdata.slectedtrain == pos){
+              var line = turf.lineString(appdata.track[appdata.trainlist[pos].PlatsForb]);
               var pt = turf.point(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]));
-              var snapped = turf.nearestPointOnLine(line, pt, {units: 'miles'});
-              if ((snapped.properties.index == 0 || snapped.properties.index == appdata.trainlist[pos].track.length - 1 ) && appdata.trainlist[pos].trackloading == false){
-                appdata.trainlist[pos].track = [snapped.geometry.coordinates, snapped.geometry.coordinates];
-                appdata.trainlist[pos].trackloading = true;
-                getLimit(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]), pos);
-              }
+              var old = turf.point(data["pos"]);
+              var snapped = turf.nearestPointOnLine(line, pt);
               position[pos].setGeometry(new ol.geom.Point(ol.proj.transform(snapped.geometry.coordinates, 'EPSG:4326', 'EPSG:3857')));
               map.getView().setCenter(ol.proj.transform(snapped.geometry.coordinates, 'EPSG:4326', 'EPSG:3857'));
+              plats = data.PlatsForb;
+              var lineString = new ol.geom.LineString(appdata.track[plats]);
+              lineString.transform('EPSG:4326', 'EPSG:3857');
+              if(!window.addedfeature){
+                window.lineFeature = new ol.Feature({
+                geometry: lineString,
+                name: 'Line',
+                style: [jvgLineStyle]
+                });
+                poslayer.addFeature(window.lineFeature);
+                window.addedfeature = 1;
+              }
+              window.lineFeature.setGeometry(lineString);
+              window.lineFeature.setStyle(jvgLineStyle);
             } else {
               position[pos].setGeometry(new ol.geom.Point(ol.proj.transform(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]), 'EPSG:4326', 'EPSG:3857')));
             }
@@ -404,14 +401,18 @@ var mapapp = new Vue({
     },
     newPosData: function (data){
       data = readgprmc(data.data);
-
       var point = new ol.Feature({
-        geometry: new ol.geom.Point(ol.proj.transform(futurePosition(data["position"], data["speed"], data["direction"], data["date"]+"T"+data["time"]), 'EPSG:4326', 'EPSG:3857')),
+        geometry: new ol.geom.Point(ol.proj.transform(data["position"], 'EPSG:4326', 'EPSG:3857')),
         name: data['vehicle']
       });
     
       point.setStyle(style);
     
+    
+      if(data['vehicle'] == this.slectedtrain){
+        getBandel(data);
+        }
+            
       if(position[data['vehicle']] == undefined){
         position[data['vehicle']] = point;
         poslayer.addFeature(position[data["vehicle"]]);
@@ -425,7 +426,7 @@ var mapapp = new Vue({
         this.$set(this.trainlist[data['vehicle']], "bandel","")
         this.$set(this.trainlist[data['vehicle']], "maxspeed","")
         this.$set(this.trainlist[data['vehicle']], "PlatsForb","")
-        this.$set(this.trainlist[data['vehicle']], "track",[])
+        this.$set(this.trainlist[data['vehicle']], "track",{})
         this.$set(this.trainlist[data['vehicle']], "time", data["time"])
         this.$set(this.trainlist[data['vehicle']], "date", data["date"])
         this.$set(this.trainlist[data['vehicle']], "direction", data["direction"])
