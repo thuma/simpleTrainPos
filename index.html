@@ -150,25 +150,25 @@ function getPostitionAtTime(trainid, time){
 }
 
 
-function getBandel(train){
+function getBandel(train, vehicle){
     var xhr = new XMLHttpRequest();
-    var newpos = futurePosition(train["position"], train["speed"], train["direction"], train["date"]+"T"+train["time"]);
+    var newpos = futurePosition(train["pos"], train["speed"], train["direction"], train["date"]+"T"+train["time"]);
     var query = {"geometry": {"$near": {"$geometry": {"type":"Point", "coordinates": newpos}, "$maxDistance": 100}}};
     var fields = {"properties.PlatsForb":1, "properties.STH_ABS": 1,"properties.Bandelnamn":1};
     xhr.open('GET', 'https://www.yathra.se/api/map/jvg?where='+JSON.stringify(query)+"&projection="+JSON.stringify(fields));
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
         var rdata = JSON.parse(this.responseText)
-        mapapp.trainlist[train['vehicle']].PlatsForb = rdata._items[0].properties.PlatsForb;
-        mapapp.trainlist[train['vehicle']].bandel = rdata._items[0].properties.Bandelnamn;
-        mapapp.trainlist[train['vehicle']].maxspeed = rdata._items[0].properties.STH_ABS;
+        mapapp.trainlist[vehicle].PlatsForb = rdata._items[0].properties.PlatsForb;
+        mapapp.trainlist[vehicle].bandel = rdata._items[0].properties.Bandelnamn;
+        mapapp.trainlist[vehicle].maxspeed = rdata._items[0].properties.STH_ABS;
         stops = rdata._items[0].properties.PlatsForb.split('-');
         if(stops.length > 1){
-            getDepartures(stops[0],stops[1], train['vehicle']);
+            getDepartures(stops[0],stops[1], vehicle);
         } else {
-            getDepartures(stops[0],undefined, train['vehicle']);
+            getDepartures(stops[0],undefined, vehicle);
         }
-        getBandelData(mapapp.trainlist[train['vehicle']].PlatsForb)
+        getBandelData(mapapp.trainlist[vehicle].PlatsForb)
     }
     };
     xhr.send();
@@ -335,6 +335,7 @@ var mapapp = new Vue({
     this.socket = new WebSocket('wss://map.thure.org/oxyfigps/');
     this.socket.onmessage = this.newPosData;
     window.setInterval(this.updatePos, 100);
+    window.setInterval(this.updateBandel, 250);
   },
   computed: {
     sortedlist: function(){
@@ -350,6 +351,11 @@ var mapapp = new Vue({
       var point2 = turf.point(p2);
       return turf.bearingToAzimuth(turf.bearing(point1, point2));
     },
+    updateBandel: function(){
+        if(this.trainlist.hasOwnProperty(this.slectedtrain)){
+        getBandel(this.trainlist[this.slectedtrain],this.slectedtrain);
+        }
+    },
     updatePos: function(){
           appdata = this;
           Object.keys(position).forEach(function(pos){
@@ -359,7 +365,7 @@ var mapapp = new Vue({
               var line = turf.multiLineString(appdata.track[appdata.trainlist[pos].PlatsForb]);
               var pt = turf.point(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]));
               var old = turf.point(data["pos"]);
-              var snapped1 = turf.nearestPointOnLine(line, data["pos"]);
+              var snapped1 = turf.nearestPointOnLine(line, old);
               var snapped = turf.nearestPointOnLine(line, pt);
               appdata.trainlist[pos]["direction"] = turf.bearing(snapped1, snapped);
               position[pos].setGeometry(new ol.geom.Point(ol.proj.transform(snapped.geometry.coordinates, 'EPSG:4326', 'EPSG:3857')));
@@ -404,12 +410,6 @@ var mapapp = new Vue({
       });
     
       point.setStyle(style);
-    
-    
-      if(data['vehicle'] == this.slectedtrain){
-        getBandel(data);
-        console.log("getting bandel")
-        }
             
       if(position[data['vehicle']] == undefined){
         position[data['vehicle']] = point;
