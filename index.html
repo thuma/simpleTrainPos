@@ -80,6 +80,9 @@
         if (data[8] !== ''){
             direction  = parseFloat(data[8]);
         }
+        if (Number.isNaN(deglon) || Number.isNaN(deglat) || Number.isNaN(speed)){
+            throw "Invalid traindata";
+        }
         // Return data to user
         return {
             "time":data[1].substring(0, 2)+":"+data[1].substring(2, 4)+":"+data[1].substring(4),
@@ -310,7 +313,7 @@ var mapapp = new Vue({
         "9050":"X53",
         "9056":"X54",
         "9057":"X54",
-        "9062":"x52",
+        "9062":"X52",
         "9067":"X52",
         "9068":"X54",
         "9081":"X52E-3",
