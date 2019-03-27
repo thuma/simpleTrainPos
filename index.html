@@ -439,7 +439,7 @@ var mapapp = new Vue({
       this.trainlist[data['vehicle']]["speed"] = speed;
       this.trainlist[data['vehicle']]["time"] = data["time"];
       this.trainlist[data['vehicle']]["date"] = data["date"];
-      this.trainlist[data['vehicle']]["direction"] = turf.bearing(turf.point(this.trainlist[data['vehicle']]["lastpos"]), turf.point(this.trainlist[data['vehicle']]["pos"]));
+      this.trainlist[data['vehicle']]["direction"] = data["direction"];
       this.trainlist[data['vehicle']]["trackloading"] = false;
     }
   }
