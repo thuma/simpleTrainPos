@@ -28,7 +28,7 @@
               <div>Plats: {{ trainlist[slectedtrain].PlatsForb }}</div>
               <div>Hastighet: {{ trainlist[slectedtrain].speed }} km/h</div>
               <div>Bana STH: {{ trainlist[slectedtrain].maxspeed }}</div>
-              <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://1409.se/position?tagNr='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
+              <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://www.trafikverket.se/trafikinformation/tag/?TrainOrStation='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
             </div>
           </div>
           <div id="map" class="map"></div>
