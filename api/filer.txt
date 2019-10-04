@@ -1,0 +1,25 @@
+https://www.scb.se/vara-tjanster/oppna-data/oppna-geodata/tatorter/
+ogr2ogr -s_srs EPSG:3006 -t_srs EPSG:4326 -f "geojson" ort.geojson To2015_Swe99TM.shp
+jq --compact-output ".features[]" ort.geojson > ortarray.geojson
+mongoimport --db sweden -c ort --file "ortarray.geojson"
+db.ort.createIndex( { "geometry" : "2dsphere" } )
+
+curl -u thuma:6oq-7ltc ftp://download-opendata.lantmateriet.se/GSD-Distriktsindelning/Sverige/Sweref_99_TM/Shape/di_riks_Sweref_99_TM_shape.zip --output distrikt.zip
+ogr2ogr -s_srs EPSG:3006 -t_srs EPSG:4326 -f "geojson" distrikt.geojson data/Distrikt_v1.shp
+jq --compact-output ".features[]" distrikt.geojson > distriktarray.geojson
+mongoimport --db sweden -c distrikt --file "distriktarray.geojson"
+db.distrikt.createIndex( { "geometry" : "2dsphere" } )
+
+curl -u thuma:6oq-7ltc ftp://download-opendata.lantmateriet.se/GSD-Oversiktskartan_vektor/Sverige/Sweref_99_TM/shape/ok_riks_Sweref_99_TM_shape.zip --output kmn.zip
+jq --compact-output ".features[]" kommun.geojson > kommunarray.geojson
+mongoimport --db sweden -c kommun --file "kommunarray.geojson"
+db.kommun.createIndex( { "geometry" : "2dsphere" } )
+
+jq --compact-output ".features[]" platser.geojson > platserarray.geojson
+mongoimport --db sweden -c platser --file "platserarray.geojson"
+db.platser.createIndex( { "geometry" : "2dsphere" } )
+
+https://lastkajen.trafikverket.se//07_FileStorage/FolderList.aspx?folderId=4260&WindowGuid=2b82194d-244c-a93a-99cf-0f4f46a374ed
+jq --compact-output ".features[]" jvg.geojson > jvgarray.geojson
+mongoimport --db sweden -c jvg --file "jvgarray.geojson"
+db.jvg.createIndex( { "geometry" : "2dsphere" } )
