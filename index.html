@@ -156,16 +156,14 @@ function getPostitionAtTime(trainid, time){
 function getBandel(train, vehicle){
     var xhr = new XMLHttpRequest();
     var newpos = futurePosition(train["pos"], train["speed"], train["direction"], train["date"]+"T"+train["time"]);
-    var query = {"geometry": {"$near": {"$geometry": {"type":"Point", "coordinates": newpos}, "$maxDistance": 100}}};
-    var fields = {"properties.PlatsForb":1, "properties.STH_ABS": 1,"properties.Bandelnamn":1};
-    xhr.open('GET', 'https://www.yathra.se/api/map/jvg?where='+JSON.stringify(query)+"&projection="+JSON.stringify(fields));
+    xhr.open('GET', '/api/track/'+newpos[0]+','+newpos[1])
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-        var rdata = JSON.parse(this.responseText)
-        mapapp.trainlist[vehicle].PlatsForb = rdata._items[0].properties.PlatsForb;
-        mapapp.trainlist[vehicle].bandel = rdata._items[0].properties.Bandelnamn;
-        mapapp.trainlist[vehicle].maxspeed = rdata._items[0].properties.STH_ABS;
-        stops = rdata._items[0].properties.PlatsForb.split('-');
+        var tracks  = JSON.parse(this.responseText)['tracks']
+        mapapp.trainlist[vehicle].PlatsForb = tracks[0].properties.PlatsForb;
+        mapapp.trainlist[vehicle].bandel = tracks[0].properties.Bandelnamn;
+        mapapp.trainlist[vehicle].maxspeed = tracks[0].properties.STH_ABS;
+        stops = tracks[0].properties.PlatsForb.split('-');
         if(stops.length > 1){
             getDepartures(stops[0],stops[1], vehicle);
         } else {
@@ -179,16 +177,14 @@ function getBandel(train, vehicle){
 
 function getBandelData(bandel){
     var xhr = new XMLHttpRequest();
-    var query = {"properties.PlatsForb":bandel};
-    var fields = {"properties.PlatsForb":1, "properties.STH_ABS": 1,"geometry.coordinates":1, "properties.Bandelnamn":1};
-    xhr.open('GET', 'https://www.yathra.se/api/map/jvg?where='+JSON.stringify(query)+"&max_results=200&projection="+JSON.stringify(fields));
-    ibandel = bandel
+    xhr.open('GET', '/api/track-connection/'+bandel)
+    var ibandel = bandel
     xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-        var rdata = JSON.parse(this.responseText)
+        var tracks = JSON.parse(this.responseText)['tracks']
         var coords = []
-        for(var i = 0; i < rdata._items.length; i++ ){
-          coords.push(rdata._items[i].geometry.coordinates);
+        for(var i = 0; i < tracks.length; i++ ){
+          coords.push(tracks[i].geometry.coordinates);
         }
         mapapp.track[ibandel] = coords;
     }
