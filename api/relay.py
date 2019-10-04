@@ -92,7 +92,7 @@ def on_open(ws):
     print "### Open ###"
 
 websocket.enableTrace(True)
-ws = websocket.WebSocketApp("wss://map.thure.org/oxyfigps/"+config.get('oxyfi','key'),
+ws = websocket.WebSocketApp("wss://api.oxyfi.com/trainpos/listen?v=1&key="+config.get('oxyfi','key'),
                               on_message = on_message,
                               on_error = on_error,
                               on_close = on_close)
