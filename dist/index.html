@@ -28,7 +28,7 @@
               <div>Plats: {{ trainlist[slectedtrain].PlatsForb }}</div>
               <div>Hastighet: {{ trainlist[slectedtrain].speed }} km/h</div>
               <div>Bana STH: {{ trainlist[slectedtrain].maxspeed }}</div>
-              <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://1409.se/position?tagNr='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
+              <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://www.trafikverket.se/trafikinformation/tag/?TrainOrStation='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
             </div>
           </div>
           <div id="map" class="map"></div>
@@ -121,16 +121,11 @@ var style = new ol.style.Style({
 
 function futurePosition(pos, speed, heading, timedate){
   dtime = (new Date().valueOf() - new Date(timedate+"Z").valueOf()) / 1000;
-  speed = speed * 1000.0 / 3600.0 ;
-  lat0 = pos[1];
-  lon0 = pos[0];
-  pi = Math.PI;
-  Rt = 6378137.0;
-  x = speed * Math.sin(heading*pi/180.0) * dtime;
-  y = speed * Math.cos(heading*pi/180.0) * dtime;
-  lat = lat0 + 180.0 / pi * y / Rt;
-  lon = lon0 + 180.0 / pi / Math.sin(lat0*pi/180.0) * x / Rt;
-  return [lon, lat];
+  var distance = speed / 3600 * dtime;
+  var point = turf.point(pos);
+  var bearing = heading;
+  var options = {units: 'kilometers'};
+  return turf.destination(point, distance, bearing, options).geometry.coordinates;
 }
 
 function setMapCenter(train){
@@ -288,7 +283,7 @@ var mapapp = new Vue({
         "3187":"X11",
         "3188":"X11",
         "3189":"X11",
-        "3190":"X11",
+        "3190":"X14",
         "3223":"X14",
         "3231":"X14",
         "3234":"X14",
