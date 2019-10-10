@@ -405,6 +405,7 @@ var mapapp = new Vue({
                   'EPSG:4326',
                   'EPSG:3857')
                 );
+            }
             else if (appdata.slectedtrain == pos){
             if (appdata.trainlist[pos].PlatsForb && appdata.track[appdata.trainlist[pos].PlatsForb])
               var line = turf.multiLineString(appdata.track[appdata.trainlist[pos].PlatsForb]);
