@@ -396,6 +396,7 @@ var mapapp = new Vue({
           Object.keys(position).forEach(function(pos){
             data = appdata.trainlist[pos];
             if (appdata.slectedtrain == pos && appdata.slectedtrain[0] == "B"){
+              position[pos].setGeometry(new ol.geom.Point(ol.proj.transform(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]), 'EPSG:4326', 'EPSG:3857')));
               setMapCenter(pos)
             }
             else if (appdata.slectedtrain == pos){
