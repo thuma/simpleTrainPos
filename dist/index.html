@@ -385,9 +385,11 @@ var mapapp = new Vue({
       return turf.bearingToAzimuth(turf.bearing(point1, point2));
     },
     updateBandel: function(){
-        if(this.trainlist.hasOwnProperty(this.slectedtrain)){
-        getBandel(this.trainlist[this.slectedtrain],this.slectedtrain);
+        if(this.slectedtrain[0]!=="B"){
+          if(this.trainlist.hasOwnProperty(this.slectedtrain)){
+          getBandel(this.trainlist[this.slectedtrain],this.slectedtrain);
         }
+      }
     },
     updatePos: function(){
           appdata = this;
