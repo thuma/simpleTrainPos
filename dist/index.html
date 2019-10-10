@@ -26,7 +26,7 @@
               <h2>{{ traintypes[slectedtrain.split('.')[0]] }} {{ slectedtrain.split('.')[0] }}</h2>
               <div>På sträckan: {{ trainlist[slectedtrain].bandel }}</div>
               <div>Plats: {{ trainlist[slectedtrain].PlatsForb }}</div>
-              <div>Hastighet: {{ trainlist[slectedtrain].speed }} km/h</div>
+              <div>Hastighet: {{ Math.round(trainlist[slectedtrain].speed) }} km/h</div>
               <div>Bana STH: {{ trainlist[slectedtrain].maxspeed }}</div>
               <div v-for="number in trainlist[slectedtrain].trainid">Tågnummer: <a v-bind:href="'https://www.trafikverket.se/trafikinformation/tag/?TrainOrStation='+number.split('.')[0]" target="iframename">{{ number.split('.')[0] }}</a> </div>
             </div>
@@ -49,7 +49,7 @@
             </tr>
             <tr v-for="trainid in sortedlist" v-bind:class="{'table-primary':selected(trainid)}">
                 <td><button v-on:click="selectTrain(trainid)" class="btn btn-sm" v-bind:class="{'btn-primary':selected(trainid),'btn-info':!selected(trainid)}">{{ traintypes[trainid.split('.')[0]] }} {{ trainid.split('.')[0] }}</button></td>
-                <td>{{ trainlist[trainid].speed }} / {{ speeds[traintypes[trainid.split('.')[0]]] }} km/h</td>
+                <td>{{ Math.round(trainlist[trainid].speed) }} / {{ speeds[traintypes[trainid.split('.')[0]]] }} km/h</td>
                 <td><span v-for="id in trainlist[trainid].trainid">{{ id.split('.')[0] }} </span></td>
             </tr>
           </table>
