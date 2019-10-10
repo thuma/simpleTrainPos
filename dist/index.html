@@ -393,7 +393,7 @@ var mapapp = new Vue({
           appdata = this;
           Object.keys(position).forEach(function(pos){
             data = appdata.trainlist[pos];
-            if (appdata.slectedtrain == pos){
+            if (appdata.slectedtrain == pos && appdata.slectedtrain[0]!== "B"){
             if (appdata.trainlist[pos].PlatsForb && appdata.track[appdata.trainlist[pos].PlatsForb])
               var line = turf.multiLineString(appdata.track[appdata.trainlist[pos].PlatsForb]);
               var pt = turf.point(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]));
