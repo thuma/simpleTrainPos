@@ -481,13 +481,17 @@ var mapapp = new Vue({
         this.$set(this.trainlist[data['vehicle']], "direction", data["direction"])
         this.$set(this.trainlist[data['vehicle']], "directiondiff", 0)
       }
-      this.trainlist[data['vehicle']]["lastpos"] = this.trainlist[data['vehicle']]["pos"];
-      this.trainlist[data['vehicle']]["pos"] = data["position"];
-      this.trainlist[data['vehicle']]["speed"] = speed;
-      this.trainlist[data['vehicle']]["time"] = data["time"];
-      this.trainlist[data['vehicle']]["date"] = data["date"];
-      this.trainlist[data['vehicle']]["direction"] = data["direction"];
-      this.trainlist[data['vehicle']]["trackloading"] = false;
+      newtime = new Date(data["date"]+"T"+data["time"])
+      oldtime = new Date(this.trainlist[data['vehicle']]["date"]+"T"+this.trainlist[data['vehicle']]["time"])
+      if( newtime > oldtime ){
+          this.trainlist[data['vehicle']]["lastpos"] = this.trainlist[data['vehicle']]["pos"];
+          this.trainlist[data['vehicle']]["pos"] = data["position"];
+          this.trainlist[data['vehicle']]["speed"] = speed;
+          this.trainlist[data['vehicle']]["time"] = data["time"];
+          this.trainlist[data['vehicle']]["date"] = data["date"];
+          this.trainlist[data['vehicle']]["direction"] = data["direction"];
+          this.trainlist[data['vehicle']]["trackloading"] = false;
+      }
     }
   }
 })
