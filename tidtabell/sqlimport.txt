@@ -1,0 +1,8 @@
+CREATE TABLE tidtabell (
+     tågtyp TEXT NOT NULL,
+     tågnr INT NOT NULL,
+     i INT NOT NULL,
+     hpl TEXT NOT NULL,
+     tid TEXT NOT NULL,
+     stoptid INT NOT NULL
+);

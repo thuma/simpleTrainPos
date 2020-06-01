@@ -1,0 +1,19 @@
+<REQUEST>
+      <LOGIN authenticationkey="openapiconsolekey" />
+      <QUERY objecttype="TrainAnnouncement" schemaversion="1.4">
+            <FILTER>
+                    <AND>
+                        <EQ name="Canceled" value="false" />   
+                    </AND>
+            </FILTER>
+            <INCLUDE>ToLocation</INCLUDE>
+            <INCLUDE>InformationOwner</INCLUDE>
+            <INCLUDE>LocationSignature</INCLUDE>
+            <INCLUDE>TechnicalTrainIdent</INCLUDE>
+            <INCLUDE>ProductInformation</INCLUDE>
+            <INCLUDE>TrackAtLocation</INCLUDE>
+            <INCLUDE>AdvertisedTimeAtLocation</INCLUDE>
+            <INCLUDE>AdvertisedTrainIdent</INCLUDE>
+            <INCLUDE>TimeAtLocationWithSeconds</INCLUDE>
+      </QUERY>
+</REQUEST>
