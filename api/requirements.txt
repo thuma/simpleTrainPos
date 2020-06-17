@@ -1,3 +1,5 @@
 gevent
 pymongo
 gevent-websocket
+websocket_client
+

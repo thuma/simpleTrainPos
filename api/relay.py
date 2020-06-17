@@ -8,8 +8,8 @@ from pymongo import MongoClient
 import uuid
 import websocket
 from datetime import datetime
-import ConfigParser
-config = ConfigParser.ConfigParser()
+import configparser
+config = configparser.ConfigParser()
 config.read('/etc/trainpos.ini')
 
 #
@@ -21,7 +21,7 @@ listeners = {}
 #
 def listenforevents(environ, start_response):
     global listeners
-    print 'ws_request'
+    print('ws_request')
     key = uuid.uuid4().hex
 
     try:
@@ -42,7 +42,6 @@ def listenforevents(environ, start_response):
     del listeners[key]
 
 def readnmea(data):
-    #print data
     direction = {"N":1,"S":-1,"W":-1,"E":1}
     out = {}
     parts = data.split(',')
@@ -83,15 +82,14 @@ def on_message(ws, message):
     sendtoall(message.strip())
 
 def on_error(ws, error):
-    print error
+    print(error)
 
 def on_close(ws):
-    print "### closed ###"
+    print("### closed ###")
 
 def on_open(ws):
-    print "### Open ###"
+    print("### Open ###")
 
-websocket.enableTrace(True)
 ws = websocket.WebSocketApp("wss://api.oxyfi.com/trainpos/listen?v=1&key="+config.get('oxyfi','key'),
                               on_message = on_message,
                               on_error = on_error,
