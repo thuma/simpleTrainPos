@@ -392,8 +392,7 @@ var mapapp = new Vue({
     }
   },
   created: function (){
-    this.socket = new WebSocket('wss://map.thure.org/oxyfigps/');
-    this.socket.onmessage = this.newPosData;
+    this.connect();
     window.setInterval(this.updatePos, 100);
     window.setInterval(this.updateBandel, 250);
   },
@@ -406,6 +405,18 @@ var mapapp = new Vue({
     }
   },
   methods: {
+    connect: function(){
+      this.socket = new WebSocket('wss://map.thure.org/oxyfigps/');
+      this.socket.onmessage = this.newPosData;
+      this.socket.onerror = function() {
+        this.socket.close();
+      };
+      this.socket.onclose = function() {
+        setTimeout(function() {
+        this.connect();
+        }, 1000);
+      };
+    },
     directionUpdate: function(p1,p2){
       var point1 = turf.point(p1);
       var point2 = turf.point(p2);
