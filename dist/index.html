@@ -469,9 +469,11 @@ var mapapp = new Vue({
     },
     selectTrain: function(trainid){
       if(this.slectedtrain == trainid){
-        this.slectedtrain = ''
+        this.slectedtrain = '';
+        map.getView().setZoom(3);
       } else {
-        this.slectedtrain = trainid
+        this.slectedtrain = trainid;
+        map.getView().setZoom(14);
       }
     },
     selected: function (trainid){
