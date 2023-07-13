@@ -406,6 +406,7 @@ var mapapp = new Vue({
   },
   methods: {
     connect: function(){
+      var main = this;
       this.socket = new WebSocket('wss://map.thure.org/oxyfigps/');
       this.socket.onmessage = this.newPosData;
       this.socket.onerror = function() {
@@ -413,7 +414,7 @@ var mapapp = new Vue({
       };
       this.socket.onclose = function() {
         setTimeout(function() {
-        this.connect();
+        main.connect();
         }, 1000);
       };
     },
