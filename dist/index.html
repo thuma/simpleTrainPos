@@ -411,7 +411,9 @@ var mapapp = new Vue({
       return "Loading"
     },
     tracks: function(){
-        var jsonReader = new ol.format.GeoJSON()
+        var jsonReader = new ol.format.GeoJSON({
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:3857'})
         var data = [];
         function to_ol_line(jsdata){
             return jsonReader.readFeature(jsdata);
@@ -575,7 +577,6 @@ var mapapp = new Vue({
           }),
           new ol.layer.Vector({
             source: tracklayer
-
           })
         ],
         view: new ol.View({
