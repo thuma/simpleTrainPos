@@ -9,7 +9,9 @@
         height: 580px;
       }
     </style>
-    <script src="ol/ol.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
+    <!--<script src="ol/ol.js" type="text/javascript"></script>-->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
     <title>Oxyfi Trains</title>
@@ -58,6 +60,8 @@
     </div>
     <script>
 var routes = {};
+
+
     function fetchJSONFile(path, callback) {
         var httpRequest = new XMLHttpRequest();
         httpRequest.onreadystatechange = function() {
@@ -122,7 +126,7 @@ var routes = {};
       var follow = '';
       var position = {};
       var poslayer = new ol.source.Vector({});
-
+      var tracklayer = new ol.source.Vector({style:jvgLineStyle});
       
 var style = new ol.style.Style({
     image: new ol.style.Circle({
@@ -167,6 +171,7 @@ function getPostitionAtTime(trainid, time){
 
 
 function getBandel(train, vehicle){
+    return;
     var xhr = new XMLHttpRequest();
     var newpos = futurePosition(train["pos"], train["speed"], train["direction"], train["date"]+"T"+train["time"]);
     xhr.open('GET', '/api/track/'+newpos[0]+','+newpos[1])
@@ -269,6 +274,7 @@ var mapapp = new Vue({
     trainlist: {},
     slectedtrain: "",
     track:{},
+    network: {},
     traintypes: {
         "1414":"Y31",
         "1415":"Y31",
@@ -394,7 +400,8 @@ var mapapp = new Vue({
   created: function (){
     this.connect();
     window.setInterval(this.updatePos, 100);
-    window.setInterval(this.updateBandel, 250);
+    //window.setInterval(this.updateBandel, 250);
+    this.readnetwork();
   },
   computed: {
     sortedlist: function(){
@@ -402,12 +409,25 @@ var mapapp = new Vue({
     },
     asyncData: function(){
       return "Loading"
+    },
+    tracks: function(){
+        var jsonReader = new ol.format.GeoJSON()
+        var data = [];
+        function to_ol_line(jsdata){
+            return jsonReader.readFeature(jsdata);
+        };
+        return this.network.features.
+            filter(track=>track.geometry.type === "LineString").
+            map(to_ol_line);
     }
   },
   methods: {
+    drawrails: function(thisline){
+        tracklayer.addFeature(thisline);
+    },
     connect: function(){
       var main = this;
-      this.socket = new WebSocket('wss://map.thure.org/oxyfigps/');
+      this.socket = new WebSocket('wss://hemma.thure.org/api/v1/trainpos');
       this.socket.onmessage = this.newPosData;
       this.socket.onerror = function() {
         this.socket.close();
@@ -430,11 +450,24 @@ var mapapp = new Vue({
         }
       }
     },
+    readnetwork: function(){
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'trv.geojson');
+        var that = this;
+        xhr.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            var rdata = JSON.parse(this.responseText)
+            that.network = rdata;
+            that.tracks.forEach(that.drawrails);    
+            };
+        };
+        xhr.send();
+    },
     updatePos: function(){
           appdata = this;
           Object.keys(position).forEach(function(pos){
             data = appdata.trainlist[pos];
-            if (appdata.slectedtrain == pos && appdata.slectedtrain[0] == "B"){
+            if (appdata.slectedtrain == pos){
               position[pos].setGeometry(new ol.geom.Point(ol.proj.transform(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]), 'EPSG:4326', 'EPSG:3857')));
               setMapCenter(pos)
             }
@@ -442,8 +475,8 @@ var mapapp = new Vue({
               if (appdata.trainlist[pos].PlatsForb && appdata.track[appdata.trainlist[pos].PlatsForb]){
                 var line = turf.multiLineString(appdata.track[appdata.trainlist[pos].PlatsForb]);
                 var pt = turf.point(futurePosition(data["pos"], data["speed"], data["direction"], data["date"]+"T"+data["time"]));
-	        var old = turf.point(data["pos"]);
-	        var snapped1 = turf.nearestPointOnLine(line, old);
+	            var old = turf.point(data["pos"]);
+	            var snapped1 = turf.nearestPointOnLine(line, old);
                 var snapped = turf.nearestPointOnLine(line, pt);
                 appdata.trainlist[pos]["direction"] = turf.bearing(snapped1, snapped);
                 position[pos].setGeometry(new ol.geom.Point(ol.proj.transform(snapped.geometry.coordinates, 'EPSG:4326', 'EPSG:3857')));
@@ -531,16 +564,18 @@ var mapapp = new Vue({
     }
   }
 })
-
       var map = new ol.Map({
         target: 'map',
         layers: [
           new ol.layer.Tile({
             source: new ol.source.OSM()
-            //source: new ol.source.OSM({url : url})
           }),
           new ol.layer.Vector({
-          source: poslayer
+            source: poslayer
+          }),
+          new ol.layer.Vector({
+            source: tracklayer
+
           })
         ],
         view: new ol.View({
@@ -556,7 +591,6 @@ map.on('singleclick', function(evt) {
         mapapp.slectedtrain = feature.U.name;
         });
 });
-
     </script>
     <textarea style="display:none" id="getTrain">
         <REQUEST>
