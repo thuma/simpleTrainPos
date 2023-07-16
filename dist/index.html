@@ -187,7 +187,7 @@ function getBandel(train, vehicle){
         } else {
             getDepartures(stops[0],undefined, vehicle);
         }
-        getBandelData(mapapp.trainlist[vehicle].PlatsForb)
+        getBandelData(mapapp.trainlist[vehicle].PlatsForb) 
     }
     };
     xhr.send();
@@ -400,7 +400,7 @@ var mapapp = new Vue({
   created: function (){
     this.connect();
     window.setInterval(this.updatePos, 100);
-    //window.setInterval(this.updateBandel, 250);
+    window.setInterval(this.updateBandel, 2000);
     this.readnetwork();
   },
   computed: {
@@ -448,7 +448,10 @@ var mapapp = new Vue({
     updateBandel: function(){
         if(this.slectedtrain[0]!=="B"){
           if(this.trainlist.hasOwnProperty(this.slectedtrain)){
-          getBandel(this.trainlist[this.slectedtrain],this.slectedtrain);
+          var bana = tracklayer.getClosestFeatureToCoordinate(ol.proj.transform(this.trainlist[this.slectedtrain].pos, 'EPSG:4326', 'EPSG:3857'))
+          this.trainlist[this.slectedtrain].PlatsForb = bana.values_.Pl_Forb;
+          this.trainlist[this.slectedtrain].maxspeed = bana.values_.STH_med;
+          this.trainlist[this.slectedtrain].bandel = bana.values_.Bandelnamn;
         }
       }
     },
